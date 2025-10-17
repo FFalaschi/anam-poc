@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAnamClient } from '@/lib/hooks/useAnamClient';
 import { AnamConnectionStatus } from '@/lib/types/anam';
+import { ANAM_PERSONA_CONFIG } from '@/config/anam.config';
 
 export default function SofiaVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -147,14 +148,19 @@ export default function SofiaVideo() {
             Conversation History
           </h4>
           <div className="space-y-2">
-            {messageHistory.map((msg: any, idx: number) => (
-              <div
-                key={idx}
-                className="text-xs p-2 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-              >
-                <span className="font-semibold">{msg.role}:</span> {msg.content}
-              </div>
-            ))}
+            {messageHistory.map((msg: any, idx: number) => {
+              // Display persona name instead of "persona" role
+              const displayRole = msg.role === 'persona' ? ANAM_PERSONA_CONFIG.name : msg.role;
+
+              return (
+                <div
+                  key={idx}
+                  className="text-xs p-2 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                >
+                  <span className="font-semibold">{displayRole}:</span> {msg.content}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
