@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { createClient } from '@anam-ai/js-sdk';
+import { createClient, AnamEvent } from '@anam-ai/js-sdk';
 import { AnamConnectionStatus } from '@/lib/types/anam';
 
 export function useAnamClient() {
@@ -35,17 +35,17 @@ export function useAnamClient() {
       clientRef.current = client;
 
       // Set up event listeners
-      client.addListener('CONNECTION_ESTABLISHED', () => {
+      client.addListener(AnamEvent.CONNECTION_ESTABLISHED, () => {
         console.log('✅ Connected to Sofia');
         setStatus(AnamConnectionStatus.CONNECTED);
       });
 
-      client.addListener('CONNECTION_CLOSED', () => {
+      client.addListener(AnamEvent.CONNECTION_CLOSED, () => {
         console.log('❌ Connection closed');
         setStatus(AnamConnectionStatus.DISCONNECTED);
       });
 
-      client.addListener('MESSAGE_HISTORY_UPDATED', (messages: any[]) => {
+      client.addListener(AnamEvent.MESSAGE_HISTORY_UPDATED, (messages: any[]) => {
         console.log('📝 Message history updated:', messages);
         setMessageHistory(messages);
       });
