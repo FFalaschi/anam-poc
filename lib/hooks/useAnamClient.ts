@@ -47,7 +47,8 @@ export function useAnamClient() {
 
       client.addListener(AnamEvent.MESSAGE_HISTORY_UPDATED, (messages: any[]) => {
         console.log('📝 Message history updated:', messages);
-        setMessageHistory(messages);
+        // Create a shallow copy to avoid circular reference issues
+        setMessageHistory(Array.isArray(messages) ? [...messages] : []);
       });
 
       return client;
