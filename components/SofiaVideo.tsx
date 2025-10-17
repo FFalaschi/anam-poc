@@ -8,10 +8,7 @@ export default function SofiaVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const { status, error, streamToVideo, stopStreaming, messageHistory } = useAnamClient();
+  const { status, error, streamToVideo, stopStreaming, messageHistory, client } = useAnamClient();
 
   const VIDEO_ELEMENT_ID = 'sofia-video';
 
@@ -20,9 +17,6 @@ export default function SofiaVideo() {
       try {
         await streamToVideo(VIDEO_ELEMENT_ID);
         setIsInitialized(true);
-
-        // Initialize audio context for microphone control
-        await initializeMicrophoneControl();
       } catch (err) {
         console.error('Failed to start session:', err);
       }
@@ -33,49 +27,28 @@ export default function SofiaVideo() {
     stopStreaming();
     setIsInitialized(false);
     setIsMuted(false);
-    cleanupMicrophoneControl();
-  };
-
-  const initializeMicrophoneControl = async () => {
-    try {
-      // Get microphone stream
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
-
-      // Create audio context
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-
-      // Create gain node for volume control
-      const gainNode = audioContext.createGain();
-      gainNodeRef.current = gainNode;
-
-      // Connect microphone to gain node
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-    } catch (err) {
-      console.error('Failed to initialize microphone control:', err);
-    }
-  };
-
-  const cleanupMicrophoneControl = () => {
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach(track => track.stop());
-      micStreamRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-    gainNodeRef.current = null;
   };
 
   const toggleMute = () => {
-    if (gainNodeRef.current) {
-      const newMutedState = !isMuted;
-      gainNodeRef.current.gain.value = newMutedState ? 0 : 1;
-      setIsMuted(newMutedState);
+    if (!client) {
+      console.error('Anam client not available');
+      return;
+    }
+
+    try {
+      if (isMuted) {
+        // Currently muted, so unmute
+        const state = client.unmuteInputAudio();
+        console.log('Unmuted microphone. New state:', state);
+        setIsMuted(false);
+      } else {
+        // Currently unmuted, so mute
+        const state = client.muteInputAudio();
+        console.log('Muted microphone. New state:', state);
+        setIsMuted(true);
+      }
+    } catch (err) {
+      console.error('Failed to toggle mute:', err);
     }
   };
 
@@ -83,13 +56,6 @@ export default function SofiaVideo() {
   useEffect(() => {
     // Uncomment to auto-start:
     // handleStartSession();
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cleanupMicrophoneControl();
-    };
   }, []);
 
   return (
